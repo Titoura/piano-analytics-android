@@ -2,7 +2,10 @@ package io.piano.android.analytics
 
 import android.os.Build
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
@@ -10,6 +13,7 @@ import kotlin.math.abs
 internal class SessionStorage(
     private val prefsStorage: PrefsStorage,
     private val deviceInfoProvider: DeviceInfoProvider,
+    lifecycleOwner: LifecycleOwner,
     sessionLifecycleListener: SessionLifecycleListener,
 ) {
     private val appVersionCode: Long by lazy {
@@ -57,7 +61,9 @@ internal class SessionStorage(
 
     init {
         sessionLifecycleListener.sessionExpiredCallback = this::initNewSession
-        addLifecycleObserver(sessionLifecycleListener)
+        lifecycleOwner.lifecycleScope.launch {
+            addLifecycleObserver(sessionLifecycleListener, lifecycleOwner)
+        }
         if (prefsStorage.sessionCount == 0) {
             // first session
             sessionCount = 1
@@ -92,6 +98,6 @@ internal class SessionStorage(
     internal inline fun getCurrentTimestamp() = System.currentTimeMillis()
 
     // for mocking in tests
-    internal fun addLifecycleObserver(observer: DefaultLifecycleObserver) =
-        ProcessLifecycleOwner.get().lifecycle.addObserver(observer)
+    internal fun addLifecycleObserver(observer: DefaultLifecycleObserver, lifecycleOwner : LifecycleOwner = ProcessLifecycleOwner.get()) =
+        lifecycleOwner.lifecycle.addObserver(observer)
 }

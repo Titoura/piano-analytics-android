@@ -2,6 +2,7 @@ package io.piano.android.analytics
 
 import android.content.Context
 import androidx.annotation.RestrictTo
+import androidx.lifecycle.LifecycleOwner
 import com.squareup.moshi.Moshi
 import io.piano.android.analytics.eventprocessors.ContextPropertiesEventProcessor
 import io.piano.android.analytics.eventprocessors.GroupEventProcessor
@@ -30,6 +31,7 @@ internal class DependenciesProvider private constructor(
     context: Context,
     configuration: Configuration,
     dataEncoder: DataEncoder,
+    lifecycleOwner: LifecycleOwner,
 ) {
     private val userAgent = "Piano Analytics SDK ${BuildConfig.SDK_VERSION}"
     private val executorProvider: () -> ScheduledExecutorService = { Executors.newSingleThreadScheduledExecutor() }
@@ -60,7 +62,7 @@ internal class DependenciesProvider private constructor(
 
     private val deviceInfoProvider = DeviceInfoProvider(context)
     private val sessionLifecycleListener = SessionLifecycleListener(configuration.sessionBackgroundDuration.toLong())
-    private val sessionStorage = SessionStorage(prefsStorage, deviceInfoProvider, sessionLifecycleListener)
+    private val sessionStorage = SessionStorage(prefsStorage, deviceInfoProvider, lifecycleOwner, sessionLifecycleListener)
 
     private val userStorage = UserStorage(configuration, prefsStorage, moshi.adapter(User::class.java))
 
@@ -155,11 +157,11 @@ internal class DependenciesProvider private constructor(
         private var instance: DependenciesProvider? = null
 
         @JvmStatic
-        internal fun init(context: Context, configuration: Configuration, dataEncoder: DataEncoder) {
+        internal fun init(context: Context, configuration: Configuration, dataEncoder: DataEncoder, lifecycleOwner: LifecycleOwner) {
             if (instance == null) {
                 synchronized(this) {
                     if (instance == null) {
-                        instance = DependenciesProvider(context.applicationContext, configuration, dataEncoder).also {
+                        instance = DependenciesProvider(context.applicationContext, configuration, dataEncoder, lifecycleOwner).also {
                             Thread.setDefaultUncaughtExceptionHandler(it.crashHandler)
                         }
                     }

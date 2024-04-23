@@ -1,6 +1,8 @@
 package io.piano.android.analytics
 
 import android.content.Context
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import io.piano.android.analytics.eventprocessors.EventProcessor
 import io.piano.android.analytics.eventprocessors.GroupEventProcessor
 import io.piano.android.analytics.idproviders.CustomIdProvider
@@ -166,6 +168,7 @@ class PianoAnalytics internal constructor(
          * @param context Activity or Application context
          * @param configuration [Configuration] object
          * @param dataEncoder custom [DataEncoder] for encrypting/decrypting events' data, default is [PlainDataEncoder]
+         * @param lifecycleOwner custom [LifecycleOwner] for app background detection to detect sessions, default is basic Android [ProcessLifecycleOwner]
          */
         @Suppress("unused") // Public API.
         @JvmStatic
@@ -174,8 +177,9 @@ class PianoAnalytics internal constructor(
             context: Context,
             configuration: Configuration,
             dataEncoder: DataEncoder = PlainDataEncoder,
+            lifecycleOwner: LifecycleOwner = ProcessLifecycleOwner.get()
         ): PianoAnalytics {
-            DependenciesProvider.init(context, configuration, dataEncoder)
+            DependenciesProvider.init(context, configuration, dataEncoder, lifecycleOwner)
             return getInstance()
         }
 
